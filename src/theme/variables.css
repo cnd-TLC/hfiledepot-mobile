@@ -1,2 +1,24 @@
 /* For information on how to create your own theme, please see:
 http://ionicframework.com/docs/theming/ */
+
+:root {
+  /* Set the background of the entire app */
+  --ion-background-color: #f6f8fc;
+
+  /* Set the font family of the entire app */
+  --ion-font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Roboto', sans-serif;
+  --ion-color-primary: #67c23a;
+}
+
+/* Set text color of the entire app for iOS only */
+:root.ios {
+	--ion-color-primary: #67c23a;
+}
+
+/* Set text color of the entire app for Material Design only */
+:root.md {
+	--ion-color-primary: #67c23a;
+  .header-md {
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 2px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 1px 0 rgba(0, 0, 0, 0.12);
+  }
+}

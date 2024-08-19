@@ -1,121 +1,140 @@
 <template>
   <ion-app>
-    <ion-split-pane content-id="main-content">
       <ion-menu content-id="main-content" type="overlay">
         <ion-content>
-          <ion-list id="inbox-list">
-            <ion-list-header>Inbox</ion-list-header>
-            <ion-note>hi@ionicframework.com</ion-note>
+          <ion-list id="menu-list">
+            <center>
+              <img :src="sorCityLogo" height="130" />
+            </center> 
+            <ion-list-header>HFile Depot</ion-list-header>
+            <br/>
+            <ion-note>Hi, {{ user.name }}!</ion-note>
 
-            <ion-menu-toggle :auto-hide="false" v-for="(p, i) in appPages" :key="i">
-              <ion-item @click="selectedIndex = i" router-direction="root" :router-link="p.url" lines="none" :detail="false" class="hydrated" :class="{ selected: selectedIndex === i }">
-                <ion-icon aria-hidden="true" slot="start" :ios="p.iosIcon" :md="p.mdIcon"></ion-icon>
-                <ion-label>{{ p.title }}</ion-label>
+            <ion-menu-toggle :auto-hide="false">
+              <ion-item
+                @click="selectItem('/home')"
+                router-direction="root"
+                :router-link="'/home'"
+                lines="none"
+                :detail="false"
+                :class="{ selected: selectedIndex === '/home' }"
+              >
+                <ion-icon aria-hidden="true" slot="start" :ios="homeOutline" :md="homeOutline"></ion-icon>
+                <ion-label>Home</ion-label>
+              </ion-item>
+              <ion-item
+                @click="selectItem('/qr_stream')"
+                router-direction="root"
+                :router-link="'/qr_stream'"
+                lines="none"
+                :detail="false"
+                :class="{ selected: selectedIndex === '/qr_stream' }"
+              >
+                <ion-icon aria-hidden="true" slot="start" :ios="qrCodeOutline" :md="qrCodeOutline"></ion-icon>
+                <ion-label>Scan QR</ion-label>
+              </ion-item>
+              <ion-item
+                @click="selectItem('/settings')"
+                router-direction="root"
+                :router-link="'/settings'"
+                lines="none"
+                :detail="false"
+                :class="{ selected: selectedIndex === '/settings' }"
+              >
+                <ion-icon aria-hidden="true" slot="start" :ios="settingsOutline" :md="settingsOutline"></ion-icon>
+                <ion-label>Settings</ion-label>
+              </ion-item>
+              <ion-item
+                @click="logoutSubmit(), selectItem('/home')"
+                lines="none"
+                :detail="false"
+              >
+                <ion-icon aria-hidden="true" slot="start" :ios="logOutOutline" :md="logOutOutline"></ion-icon>
+                <ion-label>Sign Out</ion-label>
               </ion-item>
             </ion-menu-toggle>
-          </ion-list>
-
-          <ion-list id="labels-list">
-            <ion-list-header>Labels</ion-list-header>
-
-            <ion-item v-for="(label, index) in labels" lines="none" :key="index">
-              <ion-icon aria-hidden="true" slot="start" :ios="bookmarkOutline" :md="bookmarkSharp"></ion-icon>
-              <ion-label>{{ label }}</ion-label>
-            </ion-item>
           </ion-list>
         </ion-content>
       </ion-menu>
       <ion-router-outlet id="main-content"></ion-router-outlet>
-    </ion-split-pane>
   </ion-app>
 </template>
-
 <script setup lang="ts">
-import {
-  IonApp,
-  IonContent,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonMenu,
-  IonMenuToggle,
-  IonNote,
-  IonRouterOutlet,
-  IonSplitPane,
-} from '@ionic/vue';
-import { ref } from 'vue';
-import {
-  archiveOutline,
-  archiveSharp,
-  bookmarkOutline,
-  bookmarkSharp,
-  heartOutline,
-  heartSharp,
-  mailOutline,
-  mailSharp,
-  paperPlaneOutline,
-  paperPlaneSharp,
-  trashOutline,
-  trashSharp,
-  warningOutline,
-  warningSharp,
-} from 'ionicons/icons';
+import { ref, reactive, watch } from 'vue'
+import { useAuth } from 'vue-auth3'
+import { IonApp, IonContent, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonMenu, IonMenuToggle, IonNote, IonRouterOutlet, IonSplitPane, onIonViewWillEnter } from '@ionic/vue';
+import { qrCodeOutline, homeOutline, logOutOutline, settingsOutline } from 'ionicons/icons';
+import { useRouter } from 'vue-router'
+import sorCityLogo from '/images/sorsogoncity.png'
 
-const selectedIndex = ref(0);
-const appPages = [
-  {
-    title: 'Inbox',
-    url: '/folder/Inbox',
-    iosIcon: mailOutline,
-    mdIcon: mailSharp,
-  },
-  {
-    title: 'Outbox',
-    url: '/folder/Outbox',
-    iosIcon: paperPlaneOutline,
-    mdIcon: paperPlaneSharp,
-  },
-  {
-    title: 'Favorites',
-    url: '/folder/Favorites',
-    iosIcon: heartOutline,
-    mdIcon: heartSharp,
-  },
-  {
-    title: 'Archived',
-    url: '/folder/Archived',
-    iosIcon: archiveOutline,
-    mdIcon: archiveSharp,
-  },
-  {
-    title: 'Trash',
-    url: '/folder/Trash',
-    iosIcon: trashOutline,
-    mdIcon: trashSharp,
-  },
-  {
-    title: 'Spam',
-    url: '/folder/Spam',
-    iosIcon: warningOutline,
-    mdIcon: warningSharp,
-  },
-];
-const labels = ['Family', 'Friends', 'Notes', 'Work', 'Travel', 'Reminders'];
+const auth = useAuth()
+const router = useRouter()
 
-const path = window.location.pathname.split('folder/')[1];
-if (path !== undefined) {
-  selectedIndex.value = appPages.findIndex((page) => page.title.toLowerCase() === path.toLowerCase());
+const selectedIndex = ref(router.currentRoute.value.path);
+let loading = ref(true)
+let userPromise = reactive({})
+let user = reactive({
+  id: '',
+  name: '',
+  role: '',
+  department: '',
+  status: '',
+  email: '',
+  permissions: []
+})
+
+const selectItem = (index: string) => {
+  selectedIndex.value = index;
+};
+
+const checkPermission = (val: String) => {
+  return user.permissions.includes(val)
 }
-</script>
 
+const logoutSubmit = async () => {
+  try {
+    await auth.logout()
+  }
+  catch (err) {
+    console.error('Logout failed: ', err)
+  }
+}
+
+const getUserData = async () => {
+  try {
+    await auth.fetch().then(res => {
+      Object.assign(userPromise, res)
+      userPromise = userPromise.data[0]
+
+      user.id = userPromise.id
+      user.name = userPromise.name
+      user.role = userPromise.role
+      user.status = userPromise.status
+      user.email = userPromise.email
+      user.department = userPromise.department
+      user.permissions = JSON.parse(userPromise.permissions)
+    })
+  }
+  catch (err) {
+    console.log(`Login failed: Credentials doesn't match!: `, err)
+  }
+  finally {
+    loading.value = false
+  }
+}
+
+watch(() => router.currentRoute.value, async (route) => {
+  if(route.meta.auth)
+    getUserData()
+})
+</script>
 <style scoped>
 ion-menu ion-content {
   --background: var(--ion-item-background, var(--ion-background-color, #fff));
 }
 
-ion-menu.md ion-content {
+ion-menu.md ion-content,
+ion-menu.ios ion-content {
   --padding-start: 8px;
   --padding-end: 8px;
   --padding-top: 20px;
@@ -135,25 +154,14 @@ ion-menu.md ion-note {
   padding-left: 10px;
 }
 
-ion-menu.md ion-list#inbox-list {
+ion-menu.md ion-list#menu-list {
   border-bottom: 1px solid var(--ion-background-color-step-150, #d7d8da);
 }
 
-ion-menu.md ion-list#inbox-list ion-list-header {
+ion-menu.md ion-list#menu-list ion-list-header {
   font-size: 22px;
   font-weight: 600;
-
   min-height: 20px;
-}
-
-ion-menu.md ion-list#labels-list ion-list-header {
-  font-size: 16px;
-
-  margin-bottom: 18px;
-
-  color: #757575;
-
-  min-height: 26px;
 }
 
 ion-menu.md ion-item {
@@ -176,25 +184,6 @@ ion-menu.md ion-item ion-icon {
 
 ion-menu.md ion-item ion-label {
   font-weight: 500;
-}
-
-ion-menu.ios ion-content {
-  --padding-bottom: 20px;
-}
-
-ion-menu.ios ion-list {
-  padding: 20px 0 0 0;
-}
-
-ion-menu.ios ion-note {
-  line-height: 24px;
-  margin-bottom: 20px;
-}
-
-ion-menu.ios ion-item {
-  --padding-start: 16px;
-  --padding-end: 16px;
-  --min-height: 50px;
 }
 
 ion-menu.ios ion-item.selected ion-icon {
@@ -223,11 +212,14 @@ ion-menu.ios ion-note {
 ion-note {
   display: inline-block;
   font-size: 16px;
-
   color: var(--ion-color-medium-shade);
 }
 
 ion-item.selected {
   --color: var(--ion-color-primary);
+}
+
+img {
+  margin-bottom: 30px;
 }
 </style>
