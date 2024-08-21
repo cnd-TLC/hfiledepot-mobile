@@ -7,14 +7,15 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    <ion-content fullscreen color="light">
+    <ion-loading :isOpen="loading ? 'true' : 'false'" class="custom-loading" message="Loading..." backdropDismiss="false"></ion-loading>
+    <ion-content fullscreen color="light" v-if="prDetails.length != 0 && !loading">
       <div id="container">
         <div class="pr-heading">
           <p> <i> This document contains confidential information intended solely for the viewer. Unauthorized review, use, or distribution is prohibited. </i> </p>
           <img :src="sorCityLogo" height="150" />
         </div>
         <div style="padding-bottom: 0;">
-          <p> <i> This PR is currently at {{ currentOffice }} </i> </p>
+          <p> <i> <span v-if="currentOffice != 'completed'"> This PR is currently at </span> <span v-else> Purchase Request {{ currentOffice }} </span> </i> </p>
           <ion-progress-bar color="success" :buffer="buffer" :value="progress"></ion-progress-bar>
         </div>
         <div style="padding-top: 0;">
@@ -22,31 +23,31 @@
             <ion-item-group>
               <ion-item-divider>
                 <ion-label class="pr-heading"> 
-                  <p> PR last updated @ {{ new Date(prDetails.updated_at).toDateString() }} </p>
+                  <p > PR last updated @ {{ new Date(prDetails.updated_at).toDateString() }} </p>
                   <ion-chip v-if="prDetails.status == 'Approved'" color="success">Approved</ion-chip>
                   <ion-chip v-if="prDetails.status == 'Pending'" color="warning">Pending</ion-chip>
                   <ion-chip v-if="prDetails.status == 'Rejected'" color="danger">Rejected</ion-chip>
                 </ion-label>
               </ion-item-divider>
               <ion-item>
-                <ion-label>  <span class="title"> Requested by </span> : <br /> <b> {{ prDetails.department }} </b> <br /> <i> on {{ new Date(prDetails.created_at).toDateString() }} </i> </ion-label>
+                <ion-label>  <span class="title contrast-color"> Requested by </span> : <br /> <p class="important-details"> {{ prDetails.department }} </p> <i> on {{ new Date(prDetails.created_at).toDateString() }} </i> </ion-label>
               </ion-item>
               <ion-item>
-                <ion-label>  <span class="title"> Purpose </span> : <br /> <b> {{ prDetails.purpose }} </b> </ion-label>
+                <ion-label>  <span class="title contrast-color"> Purpose </span> : <br /> <p class="details"> {{ prDetails.purpose }} </p> </ion-label>
               </ion-item>
               <ion-item v-if="prDetails.pr_no">
-                <ion-label>  <span class="title"> PR Number </span> : <br /> <b> {{ prDetails.pr_no }} </b> </ion-label>
+                <ion-label>  <span class="title contrast-color"> PR Number </span> : <br /> <p class="important-details"> {{ prDetails.pr_no }} </p> </ion-label>
               </ion-item>
               <ion-item v-if="prDetails.fund">
-                <ion-label>  <span class="title"> Fund </span> : <br /> <b> {{ prDetails.fund }} </b> </ion-label>
+                <ion-label>  <span class="title contrast-color"> Fund </span> : <br /> <p class="details"> {{ prDetails.fund.split(' - ')[1] }} </p> </ion-label>
               </ion-item>
               <ion-item v-if="prDetails.fpp">
-                <ion-label>  <span class="title"> FPP </span> : <br /> <b> {{ prDetails.fpp }} </b> </ion-label>
+                <ion-label>  <span class="title contrast-color"> FPP </span> : <br /> <p class="details"> {{ prDetails.fpp }} </p> </ion-label>
               </ion-item>
               <ion-accordion-group>
                 <ion-accordion value="inclusions">
                   <ion-item slot="header" class="accordion">
-                    <ion-label> <span class="title"> Inclusions </span></ion-label>
+                    <ion-label> <span class="title contrast-color"> Inclusions </span></ion-label>
                   </ion-item>
                   <div class="ion-padding" slot="content">
                     <div v-if="prDetails.bac_resolution == null && prDetails.canvass == null && prDetails.purchase_order == null && prDetails.obr == null && prDetails.ris == null && prDetails.inspection_acceptance == null && prDetails.abstract == null && prDetails.voucher == null && prDetails.notice_of_awards == null && prDetails.notice_to_proceed == null && prDetails.contract_of_agreement == null && prDetails.lcrb == null" >
@@ -77,12 +78,12 @@
               </ion-accordion-group>
               <br />
               <ion-item-divider v-if="prItems.length > 0 ">
-                <ion-label> Items </ion-label>
+                <ion-label class="pr-heading"> <p> Items </p> </ion-label>
               </ion-item-divider>
               <ion-accordion-group>
                 <ion-accordion v-for="(item, key) in prItems" :value="key">
                   <ion-item slot="header" class="accordion">
-                    <ion-label> <b> {{ item.item_no }} - {{ item.item_description }} </b> </ion-label>
+                    <ion-label class="contrast-color"> {{ item.item_no }} - {{ item.item_description }} </ion-label>
                   </ion-item>
                   <div class="ion-padding" slot="content">
                     <div>
@@ -101,14 +102,23 @@
         </div>
       </div>
     </ion-content>
+    <ion-content fullscreen color="light" v-if="error">
+      <div id="no-output">
+        <img :src="sorCityLogo" height="150" />
+        <div>
+          <h1> No PR Found </h1>
+          <br />
+          <ion-button router-direction="root" :router-link="'/qr_stream'"> Go back </ion-button>
+        </div>
+      </div>
+    </ion-content>
   </ion-page>
 </template>
 <script setup lang="ts">
-  import { IonButton, IonContent, IonPage, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonList, IonItemGroup, IonItemDivider, IonLabel, IonItem, IonAccordion, IonAccordionGroup, IonIcon, IonChip, IonProgressBar } from '@ionic/vue';
+  import { IonButton, IonContent, IonPage, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonList, IonItemGroup, IonItemDivider, IonLabel, IonItem, IonAccordion, IonAccordionGroup, IonIcon, IonChip, IonProgressBar, IonLoading } from '@ionic/vue';
   import { caretBack, checkmarkCircle } from 'ionicons/icons';
   import { ref, reactive } from 'vue'
   import { useAuth } from 'vue-auth3'
-  import { apiEndPoint } from '../../constant/data'
   import { useRouter } from 'vue-router'
   import axios from 'axios'
   import sorCityLogo from '/images/sorsogoncity.png'
@@ -120,6 +130,8 @@
   const progress = ref(.142)
   const buffer = ref(0)
   const currentOffice = ref('Budget Office')
+  const loading = ref(true)
+  const error = ref(false)
 
   const formatNumber = (number) => {
     number = parseFloat(number).toFixed(2)
@@ -138,31 +150,38 @@
       }  
     }
     try {
-      axios.get(router.params.axiosUrl).then((res) => {
+      axios.get(router.params.axiosUrl)
+      .then((res) => {
         prDetails.value = res.data.retrievedData
         prItems.value = res.data.retrievedItemData
         if (prDetails.value.approved_by_cbo_name){
           progress.value += .142
+          currentOffice.value = 'Treasury Office'
           if (prDetails.value.approved_by_cto_name){
-            currentOffice.value = 'Treasury Office'
+            currentOffice.value = 'Mayor\'s Office'
             progress.value += .142
             if (prDetails.value.approved_by_cmo_name){
-              currentOffice.value = 'Mayor\'s Office'
+              currentOffice.value = 'BAC Office'
               progress.value += .142
               if (prDetails.value.approved_by_bac_name){
-                currentOffice.value = 'BAC Office'
+                currentOffice.value = 'CGSO Office'
                 progress.value += .142
                 if(prDetails.value.approved_by_cgso_name){
-                currentOffice.value = 'CGSO Office'
+                  currentOffice.value = 'Accounting Office'
                   progress.value += .142
                   if (prDetails.value.approved_by_cao_name)
-                    currentOffice.value = 'Accounting Office'
+                    currentOffice.value = 'completed'
                     progress.value += .142
                 }
               }
             }
           }
         }
+        loading.value = false
+      })
+      .catch((err) => {
+        loading.value = false
+        error.value = true
       })
     }
     catch (err) {
@@ -173,17 +192,19 @@
   getPr()
 </script>
 <style scoped>
+ion-loading.custom-loading {
+  --background: #e3edff;
+  --spinner-color: var(--ion-color-primary, #0054e9);
+
+  color: var(--ion-color-primary, #0054e9);
+}
+
 #container {
   text-align: left;
   position: absolute;
   left: 0;
   right: 0;
   margin-top: 20px;
-}
-
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
 }
 
 #container div {
@@ -213,13 +234,10 @@
 }
 
 i {
-  color: var(--ion-color-primary, #0054e9) !important;
+  color: var(--ion-color-step-600, var(--ion-text-color-step-400, #666666)) !important;
   font-size: 14px;
 }
 
-b {
-  color: var(--ion-color-primary, #0054e9) !important;
-}
 
 .inclusions {
   color: var(--ion-color-primary, #0054e9) !important;
@@ -245,4 +263,52 @@ b {
   margin-right: 20px;
 }
 
+.contrast-color {
+  color: #2f4f7f !important;
+  font-weight: 600;
+}
+
+.details {
+  font-weight: 500;
+  font-size: 16px !important;
+}
+
+.important-details {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+#no-output {
+  text-align: center;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  justify-content: center;
+}
+
+#no-output strong {
+  font-size: 20px;
+  line-height: 26px;
+}
+
+#no-output div {
+  font-size: 16px;
+  line-height: 22px;
+  color: #8c8c8c;
+  margin: 0;
+  padding: 20px;
+}
+
+#no-output div h1 {
+  font-size: 50px;
+  line-height: 50px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+#no-output a {
+  text-decoration: none;
+}
 </style>

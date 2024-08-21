@@ -7,6 +7,13 @@ const config: CapacitorConfig = {
   android: {
     path: 'android',
   },
+  server: {
+    'hostname': 'localhost',
+    'androidScheme': 'https',
+    'allowNavigation': [
+      'https://mab-solutions.online/api'
+    ]
+  }
 };
 
 export default config;

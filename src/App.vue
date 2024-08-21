@@ -1,11 +1,11 @@
 <template>
   <ion-app>
-      <ion-menu content-id="main-content" type="overlay">
+      <ion-menu content-id="main-content" type="overlay" :swipe-gesture="false">
         <ion-content>
           <ion-list id="menu-list">
-            <center>
+            <div class="logo">
               <img :src="sorCityLogo" height="130" />
-            </center> 
+            </div> 
             <ion-list-header>HFile Depot</ion-list-header>
             <br/>
             <ion-note>Hi, {{ user.name }}!</ion-note>
@@ -221,5 +221,10 @@ ion-item.selected {
 
 img {
   margin-bottom: 30px;
+}
+
+.logo {
+  display: flex;
+  justify-content: center;
 }
 </style>
