@@ -41,7 +41,7 @@ const schema = object({
   password: string().required("Password is required"),
 })
 
-const { handleSubmit } = useForm({
+const { handleSubmit, resetForm, errors } = useForm({
   validationSchema: schema,
 })
 
@@ -58,8 +58,8 @@ const signinSubmit = handleSubmit(async (values) => {
   		data: values,
   	})
   	.then((res) => {
-      username = ''
-      password = ''
+      resetForm()
+      error.value = ''
   	})
   }
   catch (err) {
